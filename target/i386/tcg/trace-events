@@ -1,0 +1,7 @@
+# See docs/devel/tracing.txt for syntax documentation.
+
+# misc-helper.c
+#qrdmsr( const char *name, uint64_t reg, uint64_t val ) "rdmsr %s addr 0x%" PRIx64 " val 0x%" PRIx64 " "
+qwrmsr( const char *name, uint64_t reg, uint64_t val ) "wrmsr %s addr 0x%" PRIx64 " val 0x%" PRIx64 " " 
+
+

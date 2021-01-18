@@ -25,6 +25,7 @@
 #include "exec/cpu_ldst.h"
 #include "exec/address-spaces.h"
 #include "helper-tcg.h"
+#include "trace.h"
 
 /*
  * NOTE: the translator must set DisasContext.cc_op to CC_OP_EFLAGS
@@ -243,6 +244,8 @@ void helper_rdmsr(CPUX86State *env)
 #else
 void helper_wrmsr(CPUX86State *env)
 {
+    // qwrmsr( const char *name, uint64_t reg, uint64_t val )
+#define QWRMSR(x) trace_qwrmsr(#x,x,val);
     uint64_t val;
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 1, GETPC());
@@ -253,15 +256,19 @@ void helper_wrmsr(CPUX86State *env)
     switch ((uint32_t)env->regs[R_ECX]) {
     case MSR_IA32_SYSENTER_CS:
         env->sysenter_cs = val & 0xffff;
+	QWRMSR(MSR_IA32_SYSENTER_CS);
         break;
     case MSR_IA32_SYSENTER_ESP:
         env->sysenter_esp = val;
+	QWRMSR(MSR_IA32_SYSENTER_ESP);
         break;
     case MSR_IA32_SYSENTER_EIP:
         env->sysenter_eip = val;
+	QWRMSR(MSR_IA32_SYSENTER_EIP);
         break;
     case MSR_IA32_APICBASE:
         cpu_set_apic_base(env_archcpu(env)->apic_state, val);
+	QWRMSR(MSR_IA32_APICBASE);
         break;
     case MSR_EFER:
         {
@@ -289,34 +296,44 @@ void helper_wrmsr(CPUX86State *env)
             cpu_load_efer(env, (env->efer & ~update_mask) |
                           (val & update_mask));
         }
+	QWRMSR(MSR_EFER);
         break;
     case MSR_STAR:
         env->star = val;
+	QWRMSR(MSR_STAR);
         break;
     case MSR_PAT:
         env->pat = val;
+	QWRMSR(MSR_PAT);
         break;
     case MSR_VM_HSAVE_PA:
         env->vm_hsave = val;
+	QWRMSR(MSR_VM_HSAVE_PA);
         break;
 #ifdef TARGET_X86_64
     case MSR_LSTAR:
         env->lstar = val;
+	QWRMSR(MSR_LSTAR);
         break;
     case MSR_CSTAR:
         env->cstar = val;
+	QWRMSR(MSR_CSTAR);
         break;
     case MSR_FMASK:
         env->fmask = val;
+	QWRMSR(MSR_FMASK);
         break;
     case MSR_FSBASE:
         env->segs[R_FS].base = val;
+	QWRMSR(MSR_FSBASE);
         break;
     case MSR_GSBASE:
         env->segs[R_GS].base = val;
+	QWRMSR(MSR_GSBASE);
         break;
     case MSR_KERNELGSBASE:
         env->kernelgsbase = val;
+	QWRMSR(MSR_KERNELGSBASE);
         break;
 #endif
     case MSR_MTRRphysBase(0):
@@ -363,27 +380,33 @@ void helper_wrmsr(CPUX86State *env)
         break;
     case MSR_MTRRdefType:
         env->mtrr_deftype = val;
+	QWRMSR(MSR_MTRRdefType);
         break;
     case MSR_MCG_STATUS:
         env->mcg_status = val;
+	QWRMSR(MSR_MCG_STATUS);
         break;
     case MSR_MCG_CTL:
         if ((env->mcg_cap & MCG_CTL_P)
             && (val == 0 || val == ~(uint64_t)0)) {
             env->mcg_ctl = val;
         }
+	QWRMSR(MSR_MCG_CTL);
         break;
     case MSR_TSC_AUX:
         env->tsc_aux = val;
+	QWRMSR(MSR_TSC_AUX);
         break;
     case MSR_IA32_MISC_ENABLE:
         env->msr_ia32_misc_enable = val;
+	QWRMSR(MSR_IA32_MISC_ENABLE);
         break;
     case MSR_IA32_BNDCFGS:
         /* FIXME: #GP if reserved bits are set.  */
         /* FIXME: Extend highest implemented bit of linear address.  */
         env->msr_bndcfgs = val;
         cpu_sync_bndcs_hflags(env);
+	QWRMSR(MSR_IA32_BNDCFGS);
         break;
     default:
         if ((uint32_t)env->regs[R_ECX] >= MSR_MC0_CTL
@@ -399,6 +422,7 @@ void helper_wrmsr(CPUX86State *env)
         /* XXX: exception? */
         break;
     }
+#undef QWRMSR
 }
 
 void helper_rdmsr(CPUX86State *env)
